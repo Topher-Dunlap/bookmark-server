@@ -1,0 +1,10 @@
+{"message":"Bookmark with id 35e04d64-f165-48b3-81f1-ca5f5f234a45 created","level":"info"}
+{"message":"Bookmark with id 6f45a383-cab7-4edc-8478-d0ee8cad02d5 created","level":"info"}
+{"message":"Bookmark with id 6f45a383-cab7-4edc-8478-d0ee8cad02d5 not found.","level":"error"}
+{"message":"Bookmark with id 6f45a383-cab7-4edc-8478-d0ee8cad02d5 not found.","level":"error"}
+{"message":"Bookmark with id 2 not found.","level":"error"}
+{"message":"Bookmark with id 1 not found.","level":"error"}
+{"message":"Bookmark with id 1 not found.","level":"error"}
+{"message":"Bookmark with id 2 not found.","level":"error"}
+{"message":"Bookmark with id 2 not found.","level":"error"}
+{"message":"Bookmark with id 2 deleted.","level":"info"}
