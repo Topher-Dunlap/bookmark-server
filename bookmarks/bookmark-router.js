@@ -1,19 +1,24 @@
 const express = require('express');
 const bookmarkRouter = express.Router();
 const {v4: uuid} = require('uuid');
-const logger = require('./logger');
+const logger = require('../src/logger');
 const bodyParser = express.json();
-const { bookmarks } = require('./store');
+const {bookmarks} = require('../src/store');
+const BookmarksService = require('./BookmarksService');
 
 bookmarkRouter
-    .route('/bookmarks')
-    ///GET REQ
-    .get((req, res) => {
-        res.json(bookmarks);
+    .route('/')
+    .get((req, res, next) => {
+        const knexInstance = req.app.get('db')
+        BookmarksService.getAllBookmarks(knexInstance)
+            .then(bookmarks => {
+                // console.log(bookmarks.title)
+                res.json(bookmarks)
+            })
+            .catch(next)
     })
-    ///POST REQ
     .post(bodyParser, (req, res) => {
-        const { title, url, description, rating } = req.body;
+        const {title, url, description, rating} = req.body;
 
         /// Validate that values exist exist
         if (!title) {
@@ -46,6 +51,7 @@ bookmarkRouter
         const bookmark = {
             id,
             title,
+            url,
             description,
             rating,
         };
@@ -69,7 +75,7 @@ bookmarkRouter
         const bookmark = bookmarks.find(c => c.id == id);
 
         // make sure we found bookmark
-        if(!bookmark) {
+        if (!bookmark) {
             logger.error(`Bookmark with id ${id} not found.`);
             return res
                 .status(404)
