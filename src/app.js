@@ -7,6 +7,7 @@ const { NODE_ENV } = require('./config')
 const bookmarkRouter = require('../bookmarks/bookmark-router')
 const BookmarksService = require('../bookmarks/BookmarksService')
 const app = express()
+const jsonParser = express.json()
 
 const morganOption = (NODE_ENV === 'production')
     ? 'tiny'
@@ -53,5 +54,23 @@ app.use('/bookmarks', bookmarkRouter)
      }
      res.status(500).json(response)
  })
+
+app.post('/bookmarks', jsonParser, (req, res, next) => {
+    const { title, url, description, rating } = req.body
+    const newBookmark = { title, url, description, rating }
+    BookmarksService.insertBookmark(
+        req.app.get('db'),
+        newBookmark
+    )
+        .then(bookmark => {
+            res
+                .status(201)
+                .location(`/bookmarks/${bookmark.id}`)
+                .json(bookmark)
+        })
+        .catch(next)
+})
+
+
 
 module.exports = app

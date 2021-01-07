@@ -5,6 +5,7 @@ const logger = require('../src/logger');
 const bodyParser = express.json();
 const {bookmarks} = require('../src/store');
 const BookmarksService = require('./BookmarksService');
+const xss = require('xss')
 
 bookmarkRouter
     .route('/')
@@ -18,32 +19,15 @@ bookmarkRouter
             .catch(next)
     })
     .post(bodyParser, (req, res) => {
-        const {title, url, description, rating} = req.body;
+        const newBookmark = {title, url, description, rating} = req.body;
 
         /// Validate that values exist exist
-        if (!title) {
-            logger.error(`Title is required`);
-            return res
-                .status(400)
-                .send('Invalid data');
-        }
-        if (!url) {
-            logger.error(`URL is required`);
-            return res
-                .status(400)
-                .send('Invalid data');
-        }
-        if (!description) {
-            logger.error(`Description is required`);
-            return res
-                .status(400)
-                .send('Invalid data');
-        }
-        if (!rating) {
-            logger.error(`Rating is required`);
-            return res
-                .status(400)
-                .send('Invalid data');
+        for (const [key, value] of Object.entries(newBookmark)) {
+            if (value == null) {
+                return res.status(400).json({
+                    error: { message: `Missing '${key}' in request body` }
+                })
+            }
         }
 
         /// If bookmark exists, generate an ID
@@ -59,32 +43,40 @@ bookmarkRouter
         /// Push a bookmark object into the array.
         bookmarks.push(bookmark);
 
-        /// log the card creation and send a response including a location header
+        /// log the bookmark creation and send a response including a location header
         logger.info(`Bookmark with id ${id} created`);
         res
             .status(201)
-            .location(`http://localhost:8000/card/${id}`)
+            .location(`/bookmarks/${id}`)
             .json(bookmark);
 
     })
 
 bookmarkRouter
     .route('/bookmarks/:id')
-    .get((req, res) => {
-        const { bookmark_id } = req.params
-        BookmarksService.getById(req.app.get('db'), bookmark_id)
-            .then(bookmark => {
-        // make sure we found bookmark
-        if (!bookmark) {
-            logger.error(`Bookmark with id ${bookmark_id} not found.`)
-            return res.status(404).json({
-                error: { message: `Bookmark Not Found` }
-            })
-        }
-        res.json(bookmark);
+    .all((req, res, next) => {
+        BookmarksService.getById(
+            req.app.get('db'),
+            req.params.bookmark_id
+        ).then(bookmark => {
+            if (!bookmark) {
+                return res.status(404).json({
+                    error: { message: `Bookmark doesn't exist` }
+                })
+            }
+            res.bookmark = bookmark // save the article for the next middleware
+            next() // don't forget to call next so the next middleware happens!
+        }).catch(next)
     })
-            .catch(next)
+    .get((req, res, next) => {
+        res.json({
+            id: bookmark.id,
+            title: xss(bookmark.title), // sanitize title
+            description: xss(bookmark.description), // sanitize content
+            rating: bookmark.rating,
+        })
     })
+
     /// DELETE REQ
     .delete((req, res) => {
         const {id} = req.params;
